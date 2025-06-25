@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 214ae1889e4a6f24e9d4121eb01822f8, type: 3}
+  m_Name: ChestOpenDef
+  m_EditorClassIdentifier: 
+  interactionPromptText: Press [E] to Interact
+  playerAnimationTrigger: Interact_OpenChest
+  dedicatedUIPrefab: {fileID: 117869517130905465, guid: b6ec8c54e3d742d4089fa94159cb0604, type: 3}
