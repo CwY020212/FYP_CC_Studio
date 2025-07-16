@@ -8,59 +8,67 @@ public class PlayerInteractionController : MonoBehaviour
     private PlayerStateMachine playerStateMachine;
     private IInteractable currentClosestInteractable; // The one currently in range and valid
 
-    public Transform playerPivot;
+    public Transform playerPivot; // Assign a transform (e.g., player's head or chest) for raycasting
+
     private void Awake()
     {
         playerStateMachine = GetComponent<PlayerStateMachine>();
-        // Make sure PlayerInteractionController is added to RequireComponent in PlayerStateMachine.
+        // Ensure PlayerInteractionController is added to RequireComponent in PlayerStateMachine
+        // or that it's manually added to the same GameObject as PlayerStateMachine.
     }
 
     private void Update()
     {
-        // Example: Raycast forward to find interactables
-        if (Physics.Raycast(playerPivot.position, transform.forward, out RaycastHit hit, interactionRange, interactableLayer))
+        // Perform a raycast to detect interactables in front of the player
+        if (Physics.Raycast(playerPivot.position, playerPivot.forward, out RaycastHit hit, interactionRange, interactableLayer))
         {
             if (hit.collider.TryGetComponent(out IInteractable interactable))
             {
+                // Check if the detected interactable is currently interactable (e.g., not busy, quest conditions met)
                 if (interactable.CanInteract(playerStateMachine))
                 {
-                    // If a new interactable, show prompt
+                    // If a new valid interactable is found, hide the old prompt and show the new one
                     if (currentClosestInteractable != interactable)
                     {
-                        InteractionPromptManager.Instance?.HidePrompt(currentClosestInteractable); // Hide old
-                        // Pass the interactable's transform.position for a fixed prompt location
-                        // You can also add a specific "prompt anchor" Transform to IInteractable
-                        currentClosestInteractable = interactable; // Update before showing new prompt
+                        InteractionPromptManager.Instance?.HidePrompt(currentClosestInteractable); // Hide old prompt
+                        currentClosestInteractable = interactable; // Update to the new interactable
 
-                        // --- IMPORTANT CHANGE HERE ---
-                        // Use the interactable's GameObject position for the prompt
+                        // Show prompt for the new interactable, using its GameObject's position
                         Vector3 promptTargetWorldPosition = ((MonoBehaviour)interactable).transform.position;
                         currentClosestInteractable.CurrentWorldSpacePrompt = InteractionPromptManager.Instance?.ShowPrompt(interactable, promptTargetWorldPosition);
                     }
                 }
                 else
                 {
-                    // Interactable is not valid right now (e.g., player lacks item, not enough currency)
-                    InteractionPromptManager.Instance?.HidePrompt(interactable);
-                    if (currentClosestInteractable == interactable) currentClosestInteractable = null;
+                    // Interactable is in range but not currently interactable (e.g., dialogue active, player lacks item)
+                    if (currentClosestInteractable == interactable) // If it was the one we were showing a prompt for
+                    {
+                        InteractionPromptManager.Instance?.HidePrompt(interactable);
+                        currentClosestInteractable = null;
+                    }
                 }
+            }
+            else // Raycast hit something on the interactable layer, but it's not an IInteractable
+            {
+                InteractionPromptManager.Instance?.HidePrompt(currentClosestInteractable);
+                currentClosestInteractable = null;
             }
         }
         else
         {
-            // No interactable found
+            // No interactable found within range
             InteractionPromptManager.Instance?.HidePrompt(currentClosestInteractable);
             currentClosestInteractable = null;
         }
 
-        // Assign the detected interactable to the state machine
-        // The PlayerInteractState will read this property.
+        // Assign the detected interactable to the state machine for the InteractState to use
         playerStateMachine.currentTargetInteractable = currentClosestInteractable;
 
-        // Check for interact input
+        // Check for interact input from the player
         if (playerStateMachine.inputHandler.GetInteractInputDown() && playerStateMachine.currentTargetInteractable != null)
         {
-            // Only switch to interact state if player is not already busy
+            // Only allow switching to the interact state if the player is currently idle or moving
+            // This prevents interrupting other critical states (e.g., attacking, dodging)
             if (playerStateMachine.currentState == playerStateMachine.idleState ||
                 playerStateMachine.currentState == playerStateMachine.movementState ||
                 playerStateMachine.currentState == playerStateMachine.runState)

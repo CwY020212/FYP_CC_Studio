@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82da11154e9c20540a2b306889690c5d, type: 3}
+  m_Name: Intro_Dialogue
+  m_EditorClassIdentifier: 
+  interactionPromptText: Press [E] to Interact
+  playerAnimationTrigger: Talk
+  dedicatedUIPrefab: {fileID: 117869517130905465, guid: b6ec8c54e3d742d4089fa94159cb0604, type: 3}
+  dialogueLines:
+  - Yes, what can i help you?
+  - What are you doing here?
+  - I was here guarding the tomb...
+  - Are you sure you want to help me?
+  speakerNames:
+  - Guard
+  - You
+  - Guard
+  - You
+  offerChoices: 1
+  choiceTexts:
+  - 'I will help you '
+  - Let me think bout it first

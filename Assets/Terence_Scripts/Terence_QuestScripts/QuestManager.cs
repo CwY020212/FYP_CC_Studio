@@ -7,192 +7,139 @@ public class QuestManager : MonoBehaviour
 {
     public static QuestManager Instance { get; private set; }
 
-    [Header("Available Quests (Drag all Quest ScriptableObjects here)")]
-    public List<Quest> allAvailableQuests = new List<Quest>();
+    [Header("Available Quests")]
+    public List<QuestData> availableQuests = new List<QuestData>();
 
-    private List<Quest> _activeQuests = new List<Quest>();
-    public List<Quest> ActiveQuests => _activeQuests;
+    private List<QuestData> activeQuests = new List<QuestData>();
+    private List<QuestData> completedQuests = new List<QuestData>();
 
-    private Quest _trackedQuest; // The quest the player has chosen to follow
-    public Quest TrackedQuest => _trackedQuest;
+    // Events to notify other systems (e.g., UI)
+    public delegate void OnQuestStarted(QuestData quest);
+    public static event OnQuestStarted onQuestStarted;
 
-    // Events for UI and other systems to subscribe to
-    public static event Action<Quest> OnQuestStarted;
-    public static event Action<Quest, QuestObjective> OnObjectiveProgressed;
-    public static event Action<Quest, QuestObjective> OnObjectiveCompleted;
-    public static event Action<Quest> OnQuestCompleted;
-    public static event Action<Quest> OnTrackedQuestChanged;
+    public delegate void OnShowQuestUI(QuestData quest);
+    public static event OnShowQuestUI onShowQuestUI;
 
+    public delegate void OnQuestProgressChanged(QuestData quest);
+    public static event OnQuestProgressChanged onQuestProgressChanged;
+
+    public delegate void OnQuestCompleted(QuestData quest);
+    public static event OnQuestCompleted onQuestCompleted;
+
+    // NEW EVENT: For when a quest stage is completed (but the quest itself continues)
+    public delegate void OnQuestStageCompleted(QuestData quest);
+    public static event OnQuestStageCompleted onQuestStageCompleted;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
         {
             Destroy(gameObject);
         }
-        else
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject); // Persist across scenes if needed
-        }
 
-        // Initialize all quests to NotStarted state
-        foreach (var quest in allAvailableQuests)
+        foreach (QuestData quest in availableQuests)
         {
-            quest.currentState = QuestState.NotStarted;
-            foreach (var obj in quest.objectives)
-            {
-                obj.ResetProgress(); // Ensure objectives are reset
-            }
+            quest.InitializeQuest();
         }
     }
 
-    /// <summary>
-    /// Starts a quest and adds it to the active quests list.
-    /// </summary>
-    /// <param name="questID">The unique ID of the quest to start.</param>
-    public void StartQuest(string questID)
+    public void AssignQuest(QuestData questToStart)
     {
-        Quest quest = allAvailableQuests.FirstOrDefault(q => q.questID == questID);
-        if (quest == null)
+        if (questToStart == null)
         {
-            Debug.LogWarning($"Quest with ID '{questID}' not found!");
+            Debug.LogError("Attempted to assign a null quest.");
             return;
         }
 
-        if (quest.currentState == QuestState.NotStarted)
+        if (questToStart.currentState == QuestData.QuestState.NotStarted)
         {
-            quest.currentState = QuestState.Active;
-            _activeQuests.Add(quest);
-            Debug.Log($"Quest Started: {quest.questName}");
-            OnQuestStarted?.Invoke(quest);
-
-            // Automatically track the first quest started if none is tracked
-            if (_trackedQuest == null)
-            {
-                SetTrackedQuest(questID);
-            }
+            questToStart.StartQuest();
+            activeQuests.Add(questToStart);
+            availableQuests.Remove(questToStart);
+            onQuestStarted?.Invoke(questToStart);
+            Debug.Log($"Assigned quest: {questToStart.questName}");
         }
         else
         {
-            Debug.Log($"Quest '{quest.questName}' is already active or completed.");
+            Debug.LogWarning($"Quest '{questToStart.questName}' is already {questToStart.currentState}.");
         }
     }
 
     /// <summary>
-    /// Progresses a specific objective within a quest.
+    /// Updates the progress of an active quest's current stage.
     /// </summary>
-    /// <param name="questID">The ID of the quest.</param>
-    /// <param name="objectiveID">The ID of the objective.</param>
-    /// <param name="amount">Amount to progress by (default 1).</param>
-    public void ProgressObjective(string questID, string objectiveID, int amount = 1)
+    /// <param name="questName">The name of the quest to update.</param>
+    /// <param name="objectiveID">The specific objective ID for the current stage (e.g., "WolfPelts").</param>
+    /// <param name="amount">The amount to add to the quest's current progress for the stage.</param>
+    public void UpdateQuestProgress(string questName, string objectiveID, int amount = 1)
     {
-        Quest quest = _activeQuests.FirstOrDefault(q => q.questID == questID);
-        if (quest == null || quest.currentState != QuestState.Active)
-        {
-            // Debug.LogWarning($"Cannot progress objective. Quest '{questID}' not active or found.");
-            return;
-        }
+        QuestData quest = activeQuests.FirstOrDefault(q => q.questName == questName);
 
-        QuestObjective objective = quest.objectives.FirstOrDefault(o => o.objectiveID == objectiveID);
-        if (objective == null)
+        if (quest != null)
         {
-            Debug.LogWarning($"Objective with ID '{objectiveID}' not found in Quest '{questID}'.");
-            return;
-        }
+            // QuestData.AdvanceProgress will now handle checking if the stage is complete
+            int previousStageIndex = quest.currentStageIndex;
+            quest.AdvanceProgress(objectiveID, amount);
 
-        if (!objective.isCompleted)
-        {
-            objective.Progress(amount);
-            Debug.Log($"Objective Progressed: {objective.objectiveName} ({objective.currentAmount}/{objective.requiredAmount})");
-            OnObjectiveProgressed?.Invoke(quest, objective);
-
-            if (objective.CheckCompletion())
+            // If a stage was completed or progress changed
+            if (quest.currentStageIndex > previousStageIndex)
             {
-                objective.isCompleted = true; // Ensure isCompleted is set
-                Debug.Log($"Objective Completed: {objective.objectiveName}");
-                OnObjectiveCompleted?.Invoke(quest, objective);
-                CheckQuestCompletion(quest);
+                // A new stage has begun, notify for UI update
+                onQuestStageCompleted?.Invoke(quest); // New event for stage completion
             }
-        }
-    }
-
-    /// <summary>
-    /// Marks a specific objective as completed directly (e.g., for TalkToNPC, GoToLocation, SolvePuzzle).
-    /// </summary>
-    public void CompleteObjectiveDirectly(string questID, string objectiveID)
-    {
-        Quest quest = _activeQuests.FirstOrDefault(q => q.questID == questID);
-        if (quest == null || quest.currentState != QuestState.Active)
-        {
-            // Debug.LogWarning($"Cannot complete objective directly. Quest '{questID}' not active or found.");
-            return;
-        }
-
-        QuestObjective objective = quest.objectives.FirstOrDefault(o => o.objectiveID == objectiveID);
-        if (objective == null)
-        {
-            Debug.LogWarning($"Objective with ID '{objectiveID}' not found in Quest '{questID}'.");
-            return;
-        }
-
-        if (!objective.isCompleted)
-        {
-            objective.isCompleted = true;
-            Debug.Log($"Objective Completed Directly: {objective.objectiveName}");
-            OnObjectiveCompleted?.Invoke(quest, objective);
-            CheckQuestCompletion(quest);
-        }
-    }
-
-
-    private void CheckQuestCompletion(Quest quest)
-    {
-        if (quest.AreAllObjectivesCompleted())
-        {
-            quest.currentState = QuestState.Completed;
-            _activeQuests.Remove(quest);
-            Debug.Log($"Quest Completed: {quest.questName}");
-            OnQuestCompleted?.Invoke(quest);
-
-            // Optional: Start next quest in chain
-            if (quest.nextQuestInChain != null)
+            else if (quest.currentState == QuestData.QuestState.Active) // Only invoke if quest is still active (not fully completed yet)
             {
-                StartQuest(quest.nextQuestInChain.questID);
+                onQuestProgressChanged?.Invoke(quest); // Still invoke for general progress updates within a stage
             }
 
-            // If the completed quest was the tracked quest, untrack it
-            if (_trackedQuest == quest)
+            if (quest.IsComplete())
             {
-                SetTrackedQuest(null); // Or set to another active quest
+                activeQuests.Remove(quest);
+                completedQuests.Add(quest);
+                onQuestCompleted?.Invoke(quest); // This event is only for full quest completion
+                ApplyQuestRewards(quest);
             }
-        }
-    }
-
-    /// <summary>
-    /// Sets the currently tracked quest for UI markers, etc.
-    /// </summary>
-    /// <param name="questID">The ID of the quest to track. Pass null to untrack.</param>
-    public void SetTrackedQuest(string questID)
-    {
-        if (string.IsNullOrEmpty(questID))
-        {
-            _trackedQuest = null;
-            Debug.Log("Untracking quest.");
-            OnTrackedQuestChanged?.Invoke(null);
-            return;
-        }
-
-        Quest questToTrack = _activeQuests.FirstOrDefault(q => q.questID == questID);
-        if (questToTrack != null && questToTrack.currentState == QuestState.Active)
-        {
-            _trackedQuest = questToTrack;
-            Debug.Log($"Tracking Quest: {_trackedQuest.questName}");
-            OnTrackedQuestChanged?.Invoke(_trackedQuest);
         }
         else
         {
-            Debug.LogWarning($"Cannot track quest '{questID}'. It's not active or found.");
+            Debug.LogWarning($"Quest '{questName}' not found or not active.");
         }
+    }
+
+    public void NotifyShowQuestUI(QuestData quest)
+    {
+        onShowQuestUI?.Invoke(quest);
+    }
+
+    // NEW METHOD: For notifying when a quest stage is completed, so UI can react.
+    public void NotifyQuestStageCompleted(QuestData quest)
+    {
+        onQuestStageCompleted?.Invoke(quest);
+    }
+
+    private void ApplyQuestRewards(QuestData quest)
+    {
+        Debug.Log($"Applying rewards for '{quest.questName}': {quest.questReward.experience} XP, {quest.questReward.gold} Gold.");
+    }
+
+    public List<QuestData> GetActiveQuests()
+    {
+        return activeQuests;
+    }
+
+    public List<QuestData> GetCompletedQuests()
+    {
+        return completedQuests;
+    }
+
+    // NEW: Get an active quest by name, useful for QuestGiver
+    public QuestData GetActiveQuest(string questName)
+    {
+        return activeQuests.FirstOrDefault(q => q.questName == questName);
     }
 }

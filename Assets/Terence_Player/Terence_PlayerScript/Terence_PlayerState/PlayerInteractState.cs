@@ -11,51 +11,71 @@ public class PlayerInteractState : PlayerBaseState
         Debug.Log("Entering Interact State.");
         interactionAnimationFinished = false;
 
-        // Trigger interaction animation (e.g., player reaching out)
-        // This might be more generic for talking, or specific based on the InteractionDefinition
+        // Determine which animation to play based on the interactable type
         if (context.currentTargetInteractable is NPC npc && npc.dialogueInteraction != null)
         {
             if (!string.IsNullOrEmpty(npc.dialogueInteraction.playerAnimationTrigger))
             {
                 context.animator.SetTrigger(npc.dialogueInteraction.playerAnimationTrigger);
+                Debug.Log($"Triggering player animation: {npc.dialogueInteraction.playerAnimationTrigger}");
             }
             else
             {
-                // No specific animation, consider it finished immediately
+                Debug.Log("No specific player animation trigger for NPC interaction. Animation considered finished immediately.");
                 HandleInteractionAnimationEnd();
             }
         }
+
+        else if (context.currentTargetInteractable is QuestTrigger) // Check if it's a QuestTrigger
+        {
+            context.animator.SetTrigger("PickUp"); // Trigger the "PickUp" animation
+            Debug.Log("Triggering 'PickUp' animation for QuestTrigger interaction.");
+        }
         else
         {
-            context.animator.SetTrigger("Interact_Default"); // Or a generic interaction animation
+            // Fallback for other interactables or if no specific trigger is found
+            context.animator.SetTrigger("Talk"); // Or a generic "Interact_Default"
+            Debug.Log("Triggering generic 'Talk' animation.");
+            // Ensure this animation also has an event or a mechanism to call HandleInteractionAnimationEnd.
         }
 
+        // Subscribe to the animation end event from the PlayerStateMachine
         context.OnInteractionAnimationEnd += HandleInteractionAnimationEnd;
 
-        // Perform the interaction. For an NPC, this will kick off the dialogue.
+        // Perform the interaction (e.g., collect the wood, start dialogue)
+        // This happens concurrently with the animation starting.
         PerformInteraction();
     }
 
     public override void UpdateState()
     {
-        // NO INPUT CHECKS HERE during the animation lock
-        // The player is effectively "locked" until interactionAnimationFinished is true.
-        // For dialogue, the player might stay in this state until dialogue ends
-        // (which is handled by the OnDialogueEnd callback from DialogueUIManager).
+        // The player should remain in the InteractState as long as:
+        // 1. The interaction animation is still playing, OR
+        // 2. Dialogue is currently active.
+        // Only when BOTH are finished should we allow checking for state changes (e.g., back to idle/movement).
 
-        // If your interaction animation is very short and the dialogue system handles the "lock",
-        // you might transition to an "Interacting" or "Dialogue" state after animation.
-        // For now, if the animation is done, and dialogue has finished, allow transition.
-        if (interactionAnimationFinished )//&& !DialogueUIManager.Instance.IsDialogueActive()) // Assuming DialogueUIManager has an IsDialogueActive()
+        // --- FIX HERE: Un-comment and use IsDialogueActive() ---
+        bool dialogueIsActive = DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive();
+
+        if (interactionAnimationFinished && !dialogueIsActive) // Both conditions must be met to transition out
         {
+            Debug.Log("Animation finished AND dialogue ended. Checking for state change.");
             CheckForStateChange();
+        }
+        else
+        {
+            // Debug.Log($"Staying in Interact State. Animation finished: {interactionAnimationFinished}, Dialogue Active: {dialogueIsActive}");
+            // Stay in Interact State if animation is still playing OR dialogue is active
         }
     }
 
     public override void ExitState()
     {
         Debug.Log("Exiting Interact State.");
-        context.animator.ResetTrigger("Interact_Default"); // Reset relevant triggers
+        // Reset any triggers that might have been set
+        context.animator.ResetTrigger("Talk");
+        context.animator.ResetTrigger("Interact_Default"); // Reset a common generic trigger if used
+
         if (context.currentTargetInteractable is NPC npc && npc.dialogueInteraction != null)
         {
             if (!string.IsNullOrEmpty(npc.dialogueInteraction.playerAnimationTrigger))
@@ -64,6 +84,7 @@ public class PlayerInteractState : PlayerBaseState
             }
         }
         context.currentTargetInteractable = null;
+        // Unsubscribe to prevent memory leaks and unwanted calls
         context.OnInteractionAnimationEnd -= HandleInteractionAnimationEnd;
     }
 
@@ -76,32 +97,30 @@ public class PlayerInteractState : PlayerBaseState
         }
         else
         {
-            Debug.LogWarning("PlayerInteractState entered but no currentTargetInteractable set!");
-            // Immediately transition if no target
+            Debug.LogWarning("PlayerInteractState entered but no currentTargetInteractable set! Transitioning to Idle.");
+            // Immediately transition if no target to interact with
             context.SwitchState(context.idleState);
         }
     }
 
     private void HandleInteractionAnimationEnd()
     {
-        Debug.Log("Interaction animation finished, allowing state change.");
+        Debug.Log("Interaction animation finished callback received.");
         interactionAnimationFinished = true;
     }
 
     private void CheckForStateChange()
     {
-        // Only allow state change AFTER the interaction animation has finished
-        // AND after the dialogue (if any) has ended.
-        if (interactionAnimationFinished) // and !DialogueUIManager.Instance.IsDialogueActive() if you want the state to be held by dialogue
+        // This method is only called when interactionAnimationFinished is true
+        // AND DialogueManager.Instance.IsDialogueActive() is false (checked in UpdateState).
+        // So, it's safe to check for player movement input here to decide next state.
+        if (context.inputHandler.GetMoveInput().magnitude > 0.1f)
         {
-            if (context.inputHandler.GetMoveInput().magnitude > 0.1f)
-            {
-                context.SwitchState(context.movementState);
-            }
-            else
-            {
-                context.SwitchState(context.idleState);
-            }
+            context.SwitchState(context.movementState);
+        }
+        else
+        {
+            context.SwitchState(context.idleState);
         }
     }
 }

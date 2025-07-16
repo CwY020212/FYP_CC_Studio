@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbffa362da8e6bb4fb32e7ce99e3f020, type: 3}
+  m_Name: Quest1
+  m_EditorClassIdentifier: 
+  questName: Quest1
+  questDescription: 
+  questType: 0
+  questReward:
+    experience: 30
+    gold: 100
+  questStages:
+  - stageName: Collect Woods
+    stageDescription: 'Gather 3 woods
+
+'
+    stageType: 0
+    targetAmount: 3
+    objectiveTargetID: Collectibles_Woods
+    dialogueForStageCompletion: {fileID: 11400000, guid: 6d93bfb41dfc3f14ba25867e3a7d9c7e, type: 2}
+    requiresReturnToGiver: 0
+  - stageName: Return to Guard
+    stageDescription: Return the woods to Guard
+    stageType: 4
+    targetAmount: 1
+    objectiveTargetID: Guard
+    dialogueForStageCompletion: {fileID: 11400000, guid: 6d93bfb41dfc3f14ba25867e3a7d9c7e, type: 2}
+    requiresReturnToGiver: 1

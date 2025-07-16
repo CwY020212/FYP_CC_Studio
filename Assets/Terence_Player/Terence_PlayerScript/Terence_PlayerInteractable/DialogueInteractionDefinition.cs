@@ -6,14 +6,17 @@ public class DialogueInteractionDefinition : InteractionDefinition
 {
     [Header("Dialogue Specific Settings")]
     [Tooltip("The lines of dialogue for this interaction.")]
-    [TextArea(3, 10)] // Makes the string field a multi-line text area in the inspector
+    [TextArea(3, 10)]
     public List<string> dialogueLines;
 
-    // Optional: Add speaker names if you want different characters speaking
     public List<string> speakerNames;
 
-    // Optional: Reference to a DialogueManager or similar script to handle the actual display
-    // public DialogueManager dialogueManagerPrefab; // Or a reference to the scene's DialogueManager
+    [Header("Choices (Optional)")]
+    [Tooltip("If the last line of dialogue offers choices.")]
+    public bool offerChoices = false;
+    public List<string> choiceTexts; // e.g., "Accept Quest", "Decline"
+    // You might also add references to subsequent DialogueInteractionDefinitions
+    // or events/actions tied to each choice. For a simple quest, just a flag.
 
     public override InteractionType GetInteractionType()
     {
