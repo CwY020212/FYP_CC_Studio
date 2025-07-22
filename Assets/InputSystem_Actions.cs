@@ -207,6 +207,51 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""TapToContinue"",
+                    ""type"": ""Button"",
+                    ""id"": ""006176dd-e881-45b0-9279-b9861e8498c6"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Decision1"",
+                    ""type"": ""Button"",
+                    ""id"": ""3ccc6bff-b83f-45dc-9244-e7a5f1b13623"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Decision2"",
+                    ""type"": ""Button"",
+                    ""id"": ""9124df6e-885b-4ab4-88da-34daa384ce9f"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Decision3"",
+                    ""type"": ""Button"",
+                    ""id"": ""ebb88238-19d0-4494-ae8c-f20356594044"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Decision4"",
+                    ""type"": ""Button"",
+                    ""id"": ""2e8ba4ed-f7cd-4204-b48f-fb48e54152c4"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -594,6 +639,61 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""action"": ""LockOn"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c9eb4df1-701f-4799-8123-f7e1bf3c4a24"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TapToContinue"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f1265e88-6543-4df3-bf92-868a88860cb7"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Decision1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8b0ec05d-ba76-43ea-92b2-e1615b72a031"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Decision2"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""abf8358d-0d2c-4b16-a400-f6d9ed0defd1"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Decision3"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""039c2089-802f-4d3e-a019-968ac856b1aa"",
+                    ""path"": ""<Keyboard>/4"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Decision4"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -614,7 +714,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""name"": ""Submit"",
                     ""type"": ""Button"",
                     ""id"": ""7607c7b6-cd76-4816-beef-bd0341cfe950"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -623,7 +723,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""name"": ""Cancel"",
                     ""type"": ""Button"",
                     ""id"": ""15cef263-9014-4fd5-94d9-4e4a6234a6ef"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -1192,6 +1292,11 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_Player_Dodge = m_Player.FindAction("Dodge", throwIfNotFound: true);
         m_Player_Parry = m_Player.FindAction("Parry", throwIfNotFound: true);
         m_Player_LockOn = m_Player.FindAction("LockOn", throwIfNotFound: true);
+        m_Player_TapToContinue = m_Player.FindAction("TapToContinue", throwIfNotFound: true);
+        m_Player_Decision1 = m_Player.FindAction("Decision1", throwIfNotFound: true);
+        m_Player_Decision2 = m_Player.FindAction("Decision2", throwIfNotFound: true);
+        m_Player_Decision3 = m_Player.FindAction("Decision3", throwIfNotFound: true);
+        m_Player_Decision4 = m_Player.FindAction("Decision4", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1298,6 +1403,11 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Dodge;
     private readonly InputAction m_Player_Parry;
     private readonly InputAction m_Player_LockOn;
+    private readonly InputAction m_Player_TapToContinue;
+    private readonly InputAction m_Player_Decision1;
+    private readonly InputAction m_Player_Decision2;
+    private readonly InputAction m_Player_Decision3;
+    private readonly InputAction m_Player_Decision4;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1361,6 +1471,26 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/LockOn".
         /// </summary>
         public InputAction @LockOn => m_Wrapper.m_Player_LockOn;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/TapToContinue".
+        /// </summary>
+        public InputAction @TapToContinue => m_Wrapper.m_Player_TapToContinue;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Decision1".
+        /// </summary>
+        public InputAction @Decision1 => m_Wrapper.m_Player_Decision1;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Decision2".
+        /// </summary>
+        public InputAction @Decision2 => m_Wrapper.m_Player_Decision2;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Decision3".
+        /// </summary>
+        public InputAction @Decision3 => m_Wrapper.m_Player_Decision3;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Decision4".
+        /// </summary>
+        public InputAction @Decision4 => m_Wrapper.m_Player_Decision4;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1426,6 +1556,21 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @LockOn.started += instance.OnLockOn;
             @LockOn.performed += instance.OnLockOn;
             @LockOn.canceled += instance.OnLockOn;
+            @TapToContinue.started += instance.OnTapToContinue;
+            @TapToContinue.performed += instance.OnTapToContinue;
+            @TapToContinue.canceled += instance.OnTapToContinue;
+            @Decision1.started += instance.OnDecision1;
+            @Decision1.performed += instance.OnDecision1;
+            @Decision1.canceled += instance.OnDecision1;
+            @Decision2.started += instance.OnDecision2;
+            @Decision2.performed += instance.OnDecision2;
+            @Decision2.canceled += instance.OnDecision2;
+            @Decision3.started += instance.OnDecision3;
+            @Decision3.performed += instance.OnDecision3;
+            @Decision3.canceled += instance.OnDecision3;
+            @Decision4.started += instance.OnDecision4;
+            @Decision4.performed += instance.OnDecision4;
+            @Decision4.canceled += instance.OnDecision4;
         }
 
         /// <summary>
@@ -1476,6 +1621,21 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @LockOn.started -= instance.OnLockOn;
             @LockOn.performed -= instance.OnLockOn;
             @LockOn.canceled -= instance.OnLockOn;
+            @TapToContinue.started -= instance.OnTapToContinue;
+            @TapToContinue.performed -= instance.OnTapToContinue;
+            @TapToContinue.canceled -= instance.OnTapToContinue;
+            @Decision1.started -= instance.OnDecision1;
+            @Decision1.performed -= instance.OnDecision1;
+            @Decision1.canceled -= instance.OnDecision1;
+            @Decision2.started -= instance.OnDecision2;
+            @Decision2.performed -= instance.OnDecision2;
+            @Decision2.canceled -= instance.OnDecision2;
+            @Decision3.started -= instance.OnDecision3;
+            @Decision3.performed -= instance.OnDecision3;
+            @Decision3.canceled -= instance.OnDecision3;
+            @Decision4.started -= instance.OnDecision4;
+            @Decision4.performed -= instance.OnDecision4;
+            @Decision4.canceled -= instance.OnDecision4;
         }
 
         /// <summary>
@@ -1867,6 +2027,41 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnLockOn(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "TapToContinue" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnTapToContinue(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Decision1" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDecision1(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Decision2" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDecision2(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Decision3" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDecision3(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Decision4" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDecision4(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

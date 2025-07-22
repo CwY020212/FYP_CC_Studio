@@ -15,12 +15,9 @@ public class QuestTrigger : MonoBehaviour, IInteractable
     public string interactionPrompt = "Collect Wood"; // Text to show when player is near
     public bool destroyOnCollect = true; // Whether the wood object disappears after collection
 
-    // World Space UI for Interaction Prompt (Optional, similar to QuestGiver)
-    public GameObject worldSpacePromptPrefab; // Assign a UI Text prefab here
-    private GameObject currentWorldSpacePromptInstance;
-
+    // These are part of the IInteractable interface and will be set by PlayerInteractionController
     public string InteractionPromptText { get; private set; }
-    public GameObject CurrentWorldSpacePrompt { get; set; }
+    public GameObject CurrentWorldSpacePrompt { get; set; } // This now holds the reference to the prompt managed by InteractionPromptManager
 
     private void Awake()
     {
@@ -35,19 +32,31 @@ public class QuestTrigger : MonoBehaviour, IInteractable
 
     private void OnDisable()
     {
-        // Unregister from InteractionManager
+        // IMPORTANT: If this object is destroyed or disabled, ensure its prompt is also hidden.
+        // This is crucial for cleanup if the object is destroyed outside of the Interact method.
+        if (InteractionPromptManager.Instance != null && CurrentWorldSpacePrompt != null)
+        {
+            InteractionPromptManager.Instance.HidePrompt(this); // Pass 'this' as the IInteractable
+        }
     }
 
     public string GetInteractionPrompt()
     {
         // You could make this dynamic, e.g., "Collect Wood (2/3)"
-        // But for simplicity, we'll keep it static for now
+        // For example:
+        // if (QuestManager.Instance != null && QuestManager.Instance.GetActiveQuest(relevantQuestName) != null)
+        // {
+        //     QuestData quest = QuestManager.Instance.GetActiveQuest(relevantQuestName);
+        //     if (quest != null && quest.GetCurrentStage() != null && quest.GetCurrentStage().objectiveTargetID == objectiveID)
+        //     {
+        //         return $"{interactionPrompt} ({quest.GetCurrentStage().currentProgress}/{quest.GetCurrentStage().requiredAmount})";
+        //     }
+        // }
         return InteractionPromptText;
     }
 
     public bool CanInteract(PlayerStateMachine player)
     {
-        // You might add conditions here, e.g., player has an axe, or quest is active
         if (QuestManager.Instance == null) return false;
 
         QuestData quest = QuestManager.Instance.GetActiveQuest(relevantQuestName);
@@ -94,14 +103,19 @@ public class QuestTrigger : MonoBehaviour, IInteractable
 
                 if (destroyOnCollect)
                 {
-                    // Destroy the wood object after collection
-                    Destroy(gameObject);
-                    // Hide any world space prompt if it was shown
-                    if (CurrentWorldSpacePrompt != null)
+                    // Hide the prompt through the manager BEFORE destroying the GameObject.
+                    // The manager will then handle disabling/destroying the UI element.
+                    if (InteractionPromptManager.Instance != null)
                     {
-                        Destroy(CurrentWorldSpacePrompt);
-                        CurrentWorldSpacePrompt = null;
+                        InteractionPromptManager.Instance.HidePrompt(this); // Pass 'this' as the IInteractable
                     }
+                    else
+                    {
+                        Debug.LogWarning("InteractionPromptManager.Instance is null when trying to hide prompt for destroyed object.");
+                    }
+
+                    // Now, destroy the wood object itself
+                    Destroy(gameObject);
                 }
             }
             else

@@ -3,9 +3,9 @@ using UnityEngine;
 public class QuestGiver : MonoBehaviour, IInteractable
 {
     public QuestData questToGive;
-    public DialogueInteractionDefinition questOngoingDialogue;
     public DialogueInteractionDefinition introDialogue;
-    public DialogueInteractionDefinition questAcceptedDialogue;
+    public DialogueInteractionDefinition questOngoingDialogue;
+    public DialogueInteractionDefinition questAcceptedDialogue; // Now purely for post-acceptance dialogue
     public DialogueInteractionDefinition questAlreadyActiveDialogue;
     public DialogueInteractionDefinition questCompletedDialogue;
     public DialogueInteractionDefinition questStageCompleteDialogue; // Dialogue for when a stage is done and they return
@@ -13,9 +13,7 @@ public class QuestGiver : MonoBehaviour, IInteractable
     public string InteractionPromptText { get; private set; }
     public GameObject CurrentWorldSpacePrompt { get; set; }
 
-    private DialogueInteractionDefinition currentInteractionDefinition;
-
-    private bool shouldPlayAcceptedDialogueAfterChoice = false;
+    private DialogueInteractionDefinition currentInteractionDefinition; // This stores the current top-level dialogue the giver would offer.
 
     private void Awake()
     {
@@ -28,7 +26,7 @@ public class QuestGiver : MonoBehaviour, IInteractable
         QuestManager.onQuestCompleted += OnQuestStatusChanged;
         QuestManager.onQuestStageCompleted += OnQuestStatusChanged;
         DialogueManager.onDialogueEnded += OnDialogueEndedCallback;
-        DialogueManager.onDialogueChoiceMade += OnDialogueChoiceMadeCallback;
+        DialogueManager.onDialogueChoiceMade += OnDialogueChoiceMadeCallback; // Still needed for internal logic
     }
 
     private void OnDisable()
@@ -61,10 +59,9 @@ public class QuestGiver : MonoBehaviour, IInteractable
             return;
         }
 
-        if (shouldPlayAcceptedDialogueAfterChoice)
+        if (questToGive != null && questToGive.currentState == QuestData.QuestState.Active && questToGive.currentProgressInStage == 0)
         {
-            shouldPlayAcceptedDialogueAfterChoice = false;
-            Debug.Log("Quest Accepted Dialogue finished. Now notifying to show Quest Task UI.");
+            Debug.Log("Dialogue ended and quest is now active. Notifying to show Quest Task UI.");
             QuestManager.Instance.NotifyShowQuestUI(questToGive);
         }
 
@@ -74,44 +71,69 @@ public class QuestGiver : MonoBehaviour, IInteractable
 
     private void OnDialogueChoiceMadeCallback(int choiceIndex)
     {
-        if (currentInteractionDefinition == introDialogue && questToGive != null && questToGive.currentState == QuestData.QuestState.NotStarted)
+        DialogueInteractionDefinition dialogueThatOfferedChoice = DialogueManager.Instance.GetCurrentActiveDialogueDefinition();
+
+        if (dialogueThatOfferedChoice != null)
         {
-            if (choiceIndex == 0) // Accept Quest
+            // Ensure that the choice index is valid for the nextDialogueDefinitions list
+            if (choiceIndex >= 0 && choiceIndex < dialogueThatOfferedChoice.nextDialogueDefinitions.Count)
             {
-                QuestManager.Instance.AssignQuest(questToGive);
-                Debug.Log($"Quest '{questToGive.questName}' accepted!");
+                DialogueInteractionDefinition chosenNextDialogue = dialogueThatOfferedChoice.nextDialogueDefinitions[choiceIndex];
 
-                shouldPlayAcceptedDialogueAfterChoice = true;
-                currentInteractionDefinition = questAcceptedDialogue;
-
-                if (questAcceptedDialogue != null)
+                // Handle quest acceptance if this specific chosen next dialogue is marked to accept the quest
+                if (chosenNextDialogue != null && chosenNextDialogue.acceptsQuest)
                 {
-                    DialogueManager.Instance.StartDialogue(
-                        questAcceptedDialogue.dialogueLines,
-                        questAcceptedDialogue.speakerNames,
-                        questAcceptedDialogue
-                    );
-                    QuestManager.Instance.NotifyShowQuestUI(questToGive); // Notify UI immediately on quest start
+                    if (questToGive != null && questToGive.currentState == QuestData.QuestState.NotStarted)
+                    {
+                        QuestManager.Instance.AssignQuest(questToGive);
+                        Debug.Log($"Quest '{questToGive.questName}' accepted via choice from '{dialogueThatOfferedChoice.name}' leading to '{chosenNextDialogue.name}'!");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Attempted to accept quest '{questToGive?.questName}' but it's not in NotStarted state or questToGive is null.");
+                    }
                 }
-                else
+
+                // does NOT end the dialogue after a choice, and if there's a next dialogue to play.
+                if (chosenNextDialogue != null && !dialogueThatOfferedChoice.endsDialogueAfterChoice)
                 {
-                    Debug.LogWarning($"QuestGiver on {gameObject.name} has no questAcceptedDialogue assigned. Showing Quest UI immediately.");
-                    shouldPlayAcceptedDialogueAfterChoice = false;
+                    Debug.Log($"Starting next dialogue from choice: {chosenNextDialogue.name}");
+                    DialogueManager.Instance.StartDialogue(
+                        chosenNextDialogue.dialogueLines,
+                        chosenNextDialogue.speakerNames,
+                        chosenNextDialogue // Pass the definition itself
+                    );
+                }
+                // If the current dialogue (the one that offered choices) is set to end after a choice,
+                // then explicitly end the dialogue.
+                else if (dialogueThatOfferedChoice.endsDialogueAfterChoice)
+                {
+                    Debug.Log($"Choice {choiceIndex} made from '{dialogueThatOfferedChoice.name}' and it ends the dialogue.");
                     DialogueManager.Instance.EndDialogue();
                 }
+                else // This handles cases where chosenNextDialogue is null (no dialogue linked to choice)
+                {
+                    Debug.Log($"Choice {choiceIndex} made from '{dialogueThatOfferedChoice.name}', but no subsequent dialogue was linked or it ends the dialogue.");
+                    DialogueManager.Instance.EndDialogue(); // End dialogue if no next dialogue is specified for the choice.
+                }
             }
-            else // Decline Quest
+            else
             {
-                Debug.Log($"Quest '{questToGive.questName}' declined.");
-                DialogueManager.Instance.EndDialogue();
-                UpdateInteractionDefinition(); // Update state after declining
+                Debug.LogWarning($"Choice index {choiceIndex} out of bounds for '{dialogueThatOfferedChoice.name}'s nextDialogueDefinitions. Ending dialogue.");
+                DialogueManager.Instance.EndDialogue(); // End dialogue if choice index is invalid
             }
+        }
+        else
+        {
+            Debug.LogWarning("OnDialogueChoiceMadeCallback received, but DialogueManager.Instance.GetCurrentActiveDialogueDefinition() is null. Ending dialogue.");
+            DialogueManager.Instance.EndDialogue(); // End dialogue as there's no active definition
         }
     }
 
+
     private void UpdateInteractionDefinition()
     {
-        DialogueInteractionDefinition definitionToUse = introDialogue;
+        DialogueInteractionDefinition definitionToUse = introDialogue; // Default
 
         if (questToGive != null)
         {
@@ -124,24 +146,20 @@ public class QuestGiver : MonoBehaviour, IInteractable
                     QuestData.QuestStage currentStage = questToGive.GetCurrentStage();
                     if (currentStage != null)
                     {
+                        // Check if the current quest stage requires returning to *this* giver
                         if (currentStage.requiresReturnToGiver && currentStage.objectiveTargetID == this.name)
                         {
                             if (questToGive.IsCurrentStageComplete())
                             {
-                                // Player is back, and requirements for this return stage are met
-                                definitionToUse = questStageCompleteDialogue; // Use dialogue for stage completion
+                                definitionToUse = questStageCompleteDialogue; // Player has met stage requirements, ready to turn in
                             }
                             else
                             {
-                                // Player is back, but hasn't met the "return to giver" requirement (e.g. didn't have the item needed yet if it was a delivery stage ending in a return)
-                                // This scenario is less common for simple "talk to complete" return stages,
-                                // but if it occurs, maybe it's still just the ongoing dialogue.
-                                definitionToUse = questOngoingDialogue;
+                                definitionToUse = questOngoingDialogue; // Player needs to complete objectives for this return stage
                             }
                         }
-                        else // Not a 'return to giver' stage, or not this specific giver
+                        else // Not a 'return to giver' stage for THIS giver
                         {
-                            // Quest is active, but player is still out there doing objectives (e.g., collecting items)
                             definitionToUse = questOngoingDialogue;
                         }
                     }
@@ -159,20 +177,19 @@ public class QuestGiver : MonoBehaviour, IInteractable
             }
         }
 
-
+        // Handle cases where a specific dialogue definition might be null
         if (definitionToUse == null)
         {
+            Debug.LogWarning($"QuestGiver on {gameObject.name} has a null dialogue definition assigned for state {questToGive?.currentState}. Falling back to introDialogue.");
             definitionToUse = introDialogue; // Fallback to intro if nothing else
-            if (definitionToUse == null)
+            if (definitionToUse == null) // If intro is also null
             {
-                Debug.LogWarning($"QuestGiver on {gameObject.name} has no valid dialogue definition assigned for current state. Interaction prompt set to 'Interact'.");
+                Debug.LogWarning($"QuestGiver on {gameObject.name} has NO valid dialogue definitions assigned. Interaction prompt set to 'Interact'.");
                 InteractionPromptText = "Interact";
                 return;
             }
         }
 
-        // Only update currentInteractionDefinition and InteractionPromptText if dialogue isn't active
-        // This prevents the prompt from changing mid-dialogue.
         if (DialogueManager.Instance == null || !DialogueManager.Instance.IsDialogueActive())
         {
             currentInteractionDefinition = definitionToUse;
@@ -188,9 +205,9 @@ public class QuestGiver : MonoBehaviour, IInteractable
     {
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive())
         {
-            return false;
+            return false; // Cannot interact if dialogue is already active
         }
-        return true;
+        return true; // Can interact if no dialogue is active
     }
 
     public void Interact(PlayerStateMachine player)
@@ -201,58 +218,88 @@ public class QuestGiver : MonoBehaviour, IInteractable
             return;
         }
 
-        if (questToGive != null && questToGive.currentState == QuestData.QuestState.Active)
+        DialogueInteractionDefinition dialogueToStart = null;
+
+        if (questToGive != null)
         {
-            QuestData.QuestStage currentStage = questToGive.GetCurrentStage();
-            if (currentStage != null && currentStage.requiresReturnToGiver && currentStage.objectiveTargetID == this.name)
+            // Pre-interaction logic: Check if a stage can be completed via this interaction
+            if (questToGive.currentState == QuestData.QuestState.Active)
             {
-                
-                if (!questToGive.IsCurrentStageComplete()) // Only advance if NOT already complete
+                QuestData.QuestStage currentStage = questToGive.GetCurrentStage();
+                if (currentStage != null && currentStage.requiresReturnToGiver && currentStage.objectiveTargetID == this.name)
                 {
-                    Debug.Log($"Player is interacting with QuestGiver to complete 'return to giver' stage for quest '{questToGive.questName}'.");
-                    QuestManager.Instance.UpdateQuestProgress(questToGive.questName, this.name, 1);
-                }
-                // Update the interaction definition *after* attempting to progress,
-                // as the quest state might have changed (e.g., stage completed, or full quest completed).
-                UpdateInteractionDefinition();
-                // Now, determine the dialogue based on the *new* state/stage
-                if (questToGive.IsComplete())
-                {
-                    currentInteractionDefinition = questCompletedDialogue;
-                }
-                else // Quest advanced to next stage, but not fully complete
-                {
-                    currentInteractionDefinition = questStageCompleteDialogue; // This will now be the dialogue for the *next* stage or final return if stage 1 was the last.
+                    // This is the key change for TalkToNPC stages or return stages
+                    // If it's a TalkToNPC stage (or any return stage) and the player is interacting with the correct NPC,
+                    // we should consider this interaction as completing the stage, regardless of prior progress.
+                    // The objective for a TalkToNPC stage is usually targetAmount = 1.
+                    // We directly advance progress here.
+                    if (currentStage.stageType == QuestData.QuestType.TalkToNPC || questToGive.IsCurrentStageComplete())
+                    {
+                        Debug.Log($"Player interacting to complete stage '{currentStage.stageName}' for quest '{questToGive.questName}'. Advancing quest.");
+                        QuestManager.Instance.UpdateQuestProgress(questToGive.questName, this.name, 1); // Mark stage complete
+
+                        // NOW, based on the *new* state of the quest, decide the dialogue to play
+                        if (questToGive.currentState == QuestData.QuestState.Completed)
+                        {
+                            dialogueToStart = questCompletedDialogue;
+                            QuestManager.Instance.ApplyQuestRewards(questToGive);
+                        }
+                        else // Quest is active, meaning it advanced to a new stage
+                        {
+                            dialogueToStart = currentStage.dialogueForStageCompletion ?? questStageCompleteDialogue;
+                        }
+                    }
+                    else
+                    {
+                        // Player interacted, but a return stage (not TalkToNPC) is NOT complete yet (e.g., gathering, elimination stage before returning)
+                        dialogueToStart = questOngoingDialogue;
+                    }
                 }
             }
-            // If it's an active quest but NOT a return-to-giver stage for THIS giver,
-            // we still want to play the ongoing dialogue.
-            else if (currentInteractionDefinition == null || currentInteractionDefinition == introDialogue || currentInteractionDefinition == questAcceptedDialogue)
+
+            // If no specific dialogue was chosen by the 'return to giver' logic,
+            // fall back to the general state-based dialogue.
+            if (dialogueToStart == null)
             {
-                // This ensures if it's an ongoing quest (not a return-to-giver for THIS NPC)
-                // or if it was just accepted, it still updates to ongoing dialogue.
-                UpdateInteractionDefinition();
+                switch (questToGive.currentState)
+                {
+                    case QuestData.QuestState.NotStarted:
+                        dialogueToStart = introDialogue;
+                        break;
+                    case QuestData.QuestState.Active:
+                        // If it's active but not a return-to-giver type for this NPC
+                        dialogueToStart = questOngoingDialogue;
+                        break;
+                    case QuestData.QuestState.Completed:
+                        dialogueToStart = questCompletedDialogue;
+                        break;
+                    case QuestData.QuestState.Failed:
+                        dialogueToStart = questAlreadyActiveDialogue;
+                        break;
+                }
             }
         }
-        // If it's a new quest, or accepted dialogue is supposed to play after choice
-        else if (currentInteractionDefinition == null || currentInteractionDefinition == introDialogue || currentInteractionDefinition == questAcceptedDialogue)
+        else // No questToGive assigned
         {
-            UpdateInteractionDefinition();
+            dialogueToStart = introDialogue; // Or a generic NPC dialogue
         }
 
+        // Fallback if dialogueToStart is still null
+        if (dialogueToStart == null)
+        {
+            Debug.LogWarning($"QuestGiver on {gameObject.name} has no valid dialogue assigned for current state. Interaction will do nothing.");
+            return;
+        }
 
-        if (currentInteractionDefinition != null)
-        {
-            DialogueManager.Instance.StartDialogue(
-                currentInteractionDefinition.dialogueLines,
-                currentInteractionDefinition.speakerNames,
-                currentInteractionDefinition
-            );
-        }
-        else
-        {
-            Debug.LogWarning($"QuestGiver on {gameObject.name} has no dialogue to play for its current state after attempting to resolve it.");
-        }
+        // Now, start the determined dialogue
+        DialogueManager.Instance.StartDialogue(
+            dialogueToStart.dialogueLines,
+            dialogueToStart.speakerNames,
+            dialogueToStart
+        );
+
+        // After starting dialogue, ensure the prompt is updated for the *next* interaction
+        UpdateInteractionDefinition();
     }
 
     public string GetInteractionPrompt()

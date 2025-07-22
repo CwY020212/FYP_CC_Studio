@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82da11154e9c20540a2b306889690c5d, type: 3}
+  m_Name: Intro_Dialogue
+  m_EditorClassIdentifier: 
+  interactionPromptText: Press [E] to Interact
+  playerAnimationTrigger: Talk
+  dedicatedUIPrefab: {fileID: 117869517130905465, guid: b6ec8c54e3d742d4089fa94159cb0604, type: 3}
+  dialogueLines:
+  - Another seeker of forgotten truths? Or perhaps, another fool drawn by the Spire's
+    oppressive hum.
+  - 'This place... '
+  - It was once a beacon of spiritual clarity, where the first Excalibur fragment
+    was enshrined.
+  - 'But then, the Iron Will rose, and with it, the chains of ''order'' descended.
+    He believes the past is a weakness, a source of chaos to be erased. He fears
+    what lies beneath these stones. '
+  - 'There are texts here, ancient rituals, that hint at how the Creator''s influence
+    first seeped into this realm, twisting the very concept of peace into tyranny. '
+  - 'If you truly seek balance, you must understand the roots of this corruption.
+    I need you to retrieve three Runes of Remembrance scattered throughout these
+    ruins. They hold the key to a truth Sir Gareth desperately wants buried.. '
+  - 
+  speakerNames:
+  - 'Guard:'
+  - 'Guard:'
+  - 'Guard:'
+  - 'Guard:'
+  - 'Guard:'
+  - 'Guard:'
+  - 'You:'
+  offerChoices: 1
+  choiceTexts:
+  - '1: What truth? And who is ''He''?'
+  - '2: I seek balance. Where to find them?'
+  - '3: Tyranny twisting peace? Tell me more.'
+  nextDialogueDefinitions:
+  - {fileID: 11400000, guid: ad7f4c4593675024d9ad0210a1266f31, type: 2}
+  - {fileID: 11400000, guid: 4fbeaabe8d774034a9dd13dd92bc3c28, type: 2}
+  - {fileID: 11400000, guid: 872a5e5815adc304d9bdd08530b79659, type: 2}
+  endsDialogueAfterChoice: 0
+  acceptsQuest: 0

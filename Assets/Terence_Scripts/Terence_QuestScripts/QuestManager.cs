@@ -82,21 +82,29 @@ public class QuestManager : MonoBehaviour
 
         if (quest != null)
         {
-            // QuestData.AdvanceProgress will now handle checking if the stage is complete
+            QuestData.QuestState previousQuestState = quest.currentState; // Capture state BEFORE progress update
             int previousStageIndex = quest.currentStageIndex;
+
+            // This call will internally complete the current stage and advance currentStageIndex
+            // It will also potentially change quest.currentState to Completed
             quest.AdvanceProgress(objectiveID, amount);
 
-            // If a stage was completed or progress changed
-            if (quest.currentStageIndex > previousStageIndex)
+            // --- REFINED EVENT INVocation LOGIC ---
+
+            // Check if a stage was completed (index changed OR quest moved from Active to Completed)
+            if (quest.currentStageIndex > previousStageIndex ||
+                (previousQuestState == QuestData.QuestState.Active && quest.currentState == QuestData.QuestState.Completed))
             {
-                // A new stage has begun, notify for UI update
-                onQuestStageCompleted?.Invoke(quest); // New event for stage completion
+                // A stage has been completed (either moved to next stage or finished the entire quest)
+                onQuestStageCompleted?.Invoke(quest);
             }
-            else if (quest.currentState == QuestData.QuestState.Active) // Only invoke if quest is still active (not fully completed yet)
+            else if (quest.currentState == QuestData.QuestState.Active)
             {
-                onQuestProgressChanged?.Invoke(quest); // Still invoke for general progress updates within a stage
+                // Progress updated within the *same* stage
+                onQuestProgressChanged?.Invoke(quest);
             }
 
+            // Check for overall quest completion (this should always be the final check)
             if (quest.IsComplete())
             {
                 activeQuests.Remove(quest);
@@ -122,7 +130,7 @@ public class QuestManager : MonoBehaviour
         onQuestStageCompleted?.Invoke(quest);
     }
 
-    private void ApplyQuestRewards(QuestData quest)
+    public void ApplyQuestRewards(QuestData quest)
     {
         Debug.Log($"Applying rewards for '{quest.questName}': {quest.questReward.experience} XP, {quest.questReward.gold} Gold.");
     }

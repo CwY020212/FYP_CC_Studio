@@ -46,6 +46,8 @@ public class QuestData : ScriptableObject
         public string stageName; // e.g., "Collect 5 Wolf Pelts", "Return to Giver"
         [TextArea(2, 5)]
         public string stageDescription;
+        [TextArea(2, 5)]
+        public string stageDescription1;
         public QuestType stageType; // Type for this specific stage
         public int targetAmount; // Target for this stage (e.g., 5 pelts, 1 for TalkToNPC)
         public string objectiveTargetID; // e.g., "WolfPelts", "QuestGiverName" for TalkToNPC

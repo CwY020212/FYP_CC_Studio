@@ -27,6 +27,8 @@ public class DialogueManager : MonoBehaviour
     private bool isTyping = false;
     private bool dialogueActive = false;
 
+    private PlayerInputHandler playerInputHandler;
+
     // Callbacks for when choices are made or dialogue ends
     public delegate void DialogueChoiceMade(int choiceIndex);
     public static event DialogueChoiceMade onDialogueChoiceMade;
@@ -54,8 +56,67 @@ public class DialogueManager : MonoBehaviour
         currentDialogueLines = new Queue<string>();
         currentSpeakerNames = new Queue<string>();
         continueButton.gameObject.SetActive(false);
+
+        playerInputHandler = FindObjectOfType<PlayerInputHandler>();
     }
 
+    private void Update() // Add an Update method to listen for input
+    {
+        // Only process input if dialogue is active and choices are not currently shown
+        if (dialogueActive && !choicePanel.activeSelf)
+        {
+            // If currently typing, pressing 'tap to continue' will skip the typing animation
+            if (isTyping && playerInputHandler.GetTapToContinueInputDown())
+            {
+                StopAllCoroutines();
+                dialogueText.maxVisibleCharacters = dialogueText.text.Length;
+                isTyping = false;
+                CheckForChoicesOrContinue(); // Proceed after skipping
+            }
+            // If not typing and continue button is active, pressing 'tap to continue' moves to next sentence
+            else if (!isTyping && continueButton.gameObject.activeSelf && playerInputHandler.GetTapToContinueInputDown())
+            {
+                OnContinueButtonClicked();
+            }
+        }
+        else if (dialogueActive && choicePanel.activeSelf) // Only process if dialogue is active AND choices ARE shown
+        {
+            // Check for '1' key press for the first choice (index 0)
+            if (playerInputHandler.GetDecision1InputDown())
+            {
+                // Ensure there's a choice at index 0 before attempting to select it
+                if (currentDialogueDefinition != null && currentDialogueDefinition.choiceTexts.Count > 0)
+                {
+                    OnChoiceSelected(0);
+                }
+            }
+            // Check for '2' key press for the second choice (index 1)
+            else if (playerInputHandler.GetDecision2InputDown())
+            {
+                // Ensure there's a choice at index 1 before attempting to select it
+                if (currentDialogueDefinition != null && currentDialogueDefinition.choiceTexts.Count > 1)
+                {
+                    OnChoiceSelected(1);
+                }
+            }
+            else if (playerInputHandler.GetDecision3InputDown())
+            {
+                // Ensure there's a choice at index 1 before attempting to select it
+                if (currentDialogueDefinition != null && currentDialogueDefinition.choiceTexts.Count > 2)
+                {
+                    OnChoiceSelected(2);
+                }
+            }
+            else if (playerInputHandler.GetDecision4InputDown())
+            {
+                // Ensure there's a choice at index 1 before attempting to select it
+                if (currentDialogueDefinition != null && currentDialogueDefinition.choiceTexts.Count > 3)
+                {
+                    OnChoiceSelected(3);
+                }
+            }
+        }
+    }
 
     public void StartDialogue(List<string> dialogue, List<string> speakers = null, DialogueInteractionDefinition definition = null)
     {
@@ -232,5 +293,9 @@ public class DialogueManager : MonoBehaviour
     public bool IsDialogueActive()
     {
         return dialogueActive;
+    }
+    public DialogueInteractionDefinition GetCurrentActiveDialogueDefinition()
+    {
+        return currentDialogueDefinition;
     }
 }

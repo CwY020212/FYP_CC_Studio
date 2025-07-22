@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbffa362da8e6bb4fb32e7ce99e3f020, type: 3}
+  m_Name: RuinSectionQuest_SO
+  m_EditorClassIdentifier: 
+  questName: Echoes in the Ruins
+  questDescription: 
+  questType: 0
+  questReward:
+    experience: 30
+    gold: 100
+  questStages:
+  - stageName: Explore the truth
+    stageDescription: 'Gather
+
+'
+    stageDescription1: Ruins of Remembrances
+    stageType: 0
+    targetAmount: 1
+    objectiveTargetID: Collectibles_Woods
+    dialogueForStageCompletion: {fileID: 11400000, guid: ea7b42cfa4927054cbcdd97cf79616ed, type: 2}
+    requiresReturnToGiver: 0
+  - stageName: Return to Guard
+    stageDescription: Return to Guard
+    stageDescription1: and talk to him
+    stageType: 4
+    targetAmount: 1
+    objectiveTargetID: Guard
+    dialogueForStageCompletion: {fileID: 11400000, guid: ea7b42cfa4927054cbcdd97cf79616ed, type: 2}
+    requiresReturnToGiver: 1

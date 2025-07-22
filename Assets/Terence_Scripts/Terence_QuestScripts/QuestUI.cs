@@ -121,7 +121,7 @@ public class QuestUI : MonoBehaviour
         {
             if (progressText != null)
             {
-                progressText.text = $"{quest.currentProgressInStage}/{currentStage.targetAmount} {currentStage.stageDescription}";
+                progressText.text = $"{currentStage.stageDescription}{quest.currentProgressInStage}/{currentStage.targetAmount} {currentStage.stageDescription1}";
             }
             else
             {
